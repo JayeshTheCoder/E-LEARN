@@ -32,6 +32,11 @@
     <!-- Template Stylesheet -->
     <link href="css/style.css" rel="stylesheet">
 
+    <!-- Pyscript Library -->
+
+    <link rel="stylesheet" href="">
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+
 
 </head>
 
@@ -57,10 +62,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <div class="navbar-nav ms-auto p-4 p-lg-0">
-                <a href="index.html" class="nav-item nav-link">Home</a>
+                <a href="index.html" class="nav-item nav-link active">Home</a>
                 <a href="about.html" class="nav-item nav-link">About</a>
                 <a href="courses.html" class="nav-item nav-link">Courses</a>
-                <a href="recommendation.html" class="nav-item nav-link active">Recommendation</a>
+                <a href="recommendation.html" class="nav-item nav-link">Recommendation</a>
 
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
@@ -70,7 +75,7 @@
                     </div>
                 </div>
                 <a href="contact.html" class="nav-item nav-link">Contact</a>
-                <a href="login.php" class="nav-item nav-link"><i class="fa fa-user"></i></a>
+                <a href="login.html" class="nav-item nav-link"><i class="fa fa-user"></i></a>
                 <a href="#" class="nav-item nav-link">
                     <div id="google_translate_element"></div>
                 </a>
@@ -106,25 +111,102 @@
         <div class="container">
             <div class="row g-4 wow fadeInUp" data-wow-delay="0.5s">
                 <center>
-                    <div class="shadow p-4" style="max-width: 1550px;">
+                    <div class="shadow p-4" style="max-width: 550px;">
                         <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
                             <h1 class="mb-5 bg-white text-center px-3">Course Recommendation</h1>
                         </div>
-                        <div class="col-12 mb-3">
-                            <div class="form-floating">
-                                <input type="hidden" class="form-control" id="message">
-                                
-                            </div>
-                        </div>
+
                         <!-- Recommend Button -->
                         <div class="col-12">
-                            <button id="recommend-btn" class="btn btn-primary text-light w-25 py-3" type="button">Recommend</button>
+                            <button id="recommend-btn" class="btn btn-primary text-light w-100 py-3" type="button">Recommend</button>
                         </div>
 
-                       
+                        <!-- PyScript for recommendations -->
+                        <py-script output="recommendation-output">
+                            import gspread
+                            from oauth2client.service_account import ServiceAccountCredentials
+                            import difflib  # For fuzzy matching
+                            
+                            # Step 1: Authenticate and Access Google Sheets
+                            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                            creds = ServiceAccountCredentials.from_json_keyfile_name('C:\Users\Jayesh\Desktop\E-Learning-Website-HTML-CSS-main\minor-project-439108-cc4a93fe43e4.json', scope)
+                            client = gspread.authorize(creds)
+                            
+                            # Step 2: Access Course Data and User Preferences Sheets
+                            course_sheet_id = "1HPsvg6oFH40R_7FY9MS8SYpqPPWNdItbqZFAOCbbNfY"  # ID of the course data sheet
+                            user_prefs_sheet_id = "1_T9r80LVnvwc5PKokC-GSen7GKITdB3JintqkAIKVvs"  # ID of the user preferences sheet
+                            
+                            # Open the spreadsheets using the ID
+                            course_sheet = client.open_by_key(course_sheet_id).sheet1  # Open course data sheet
+                            user_prefs_sheet = client.open_by_key(user_prefs_sheet_id).sheet1  # Open user preferences sheet
+                            
+                            # Step 3: Get All Course Data and User Preferences
+                            courses = course_sheet.get_all_records()  # Get all course data as a list of dictionaries
+                            user_prefs = user_prefs_sheet.get_all_records()  # Get all user preferences as a list of dictionaries
+                            
+                            # Helper function for fuzzy matching topics and calculating similarity score
+                            def get_similarity_score(course_topic, interested_topics):
+                                max_similarity = 0
+                                for topic in interested_topics:
+                                    similarity = difflib.SequenceMatcher(None, course_topic.lower(), topic.lower()).ratio()
+                                    max_similarity = max(max_similarity, similarity)  # Track the highest similarity score
+                                return max_similarity
+                            
+                            # Step 4: Process Each User's Preferences and Filter Courses
+                            for user in user_prefs:
+                                interested_topics = [topic.strip().lower() for topic in user["Interested Fields/Subjects"].split(",")]
+                                pacing_preference = user["Pacing Preferences"].lower()
+                                learning_style_preference = user["Preferred Learning Style"].lower()
+                            
+                                print(f"Recommending Courses Based On Your Preferences....")
+                                print("Here are some courses recommended to you based on your preferences:")
+                                print(f"Interested Fields: {interested_topics}")
+                                print(f"Pacing: {pacing_preference}")
+                                print(f"Learning Style: {learning_style_preference}")
+                                print("----Recommending----")
+                            
+                                # Step 5: Filter and Rank Courses Based on Similarity Score
+                                ranked_courses = [
+                                    {
+                                        "course": course,
+                                        "similarity": get_similarity_score(course["Course Topic"], interested_topics)
+                                    }
+                                    for course in courses
+                                    if get_similarity_score(course["Course Topic"], interested_topics) > 0.4  # Only include courses with a similarity score > 0.4
+                                ]
+                            
+                                # Sort courses by similarity score in descending order
+                                ranked_courses.sort(key=lambda x: x["similarity"], reverse=True)
+                            
+                                # Step 6: Display Filtered Courses Ranked by Similarity
+                                if ranked_courses:
+                                    displayed_courses = 0
+                                    for ranked_course in ranked_courses:
+                                        course = ranked_course["course"]
+                                        similarity_score = ranked_course["similarity"]
+                            
+                                        # Display courses that match at least one preference even if not exact
+                                        if (pacing_preference in course["Pacing"].lower() or pacing_preference == "any" or similarity_score == 1) and \
+                                           (learning_style_preference in course["Learning Style"].lower() or learning_style_preference == "any" or similarity_score == 1):
+                                            print(f"- {course['Course Name']} ({course['Course Link']}) [Similarity: {similarity_score:.2f}]")
+                                            displayed_courses += 1
+                            
+                                    # Fallback: Display more courses if very few are found
+                                    if displayed_courses == 0:
+                                        print("No exact matches, showing courses based on topic relevance:")
+                                        for ranked_course in ranked_courses:
+                                            course = ranked_course["course"]
+                                            similarity_score = ranked_course["similarity"]
+                                            print(f"- {course['Course Name']} ({course['Course Link']}) [Similarity: {similarity_score:.2f}]")
+                                else:
+                                    print("No courses found matching the preferences.")
+                            
+                                print("\n-------------------------\n")
+                            
+                        </py-script>
 
                         <!-- Recommendation Output -->
-                        <div id="recommendation-output" class="mt-3 text-md-start"></div>
+                        <div id="recommendation-output" class="mt-3 text-center"></div>
                     </div>
                 </center>
             </div>
@@ -200,28 +282,6 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
-
-    <script>
-        document.getElementById('recommend-btn').addEventListener('click', function() {
-            const message = document.getElementById('message').value;
-
-            fetch('http://localhost:5000/run_script', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: message }) // Send the message as JSON
-            })
-            .then(response => response.json()) // Parse JSON response
-            .then(data => {
-                // Display the output in the output div
-                document.getElementById('recommendation-output').innerText = data.message;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
-    </script>
 </body>
 
 </html>
