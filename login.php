@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Persona Learn : Course Recommendation</title>
+    <title>Persona Learn : Login</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="" name="keywords">
     <meta content="" name="description">
@@ -32,7 +32,6 @@
     <!-- Template Stylesheet -->
     <link href="css/style.css" rel="stylesheet">
 
-
 </head>
 
 <body>
@@ -60,7 +59,7 @@
                 <a href="index.html" class="nav-item nav-link">Home</a>
                 <a href="about.html" class="nav-item nav-link">About</a>
                 <a href="courses.html" class="nav-item nav-link">Courses</a>
-                <a href="recommendation.html" class="nav-item nav-link active">Recommendation</a>
+                <a href="recommendation.html" class="nav-item nav-link">Recommendation</a>
 
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
@@ -70,7 +69,7 @@
                     </div>
                 </div>
                 <a href="contact.html" class="nav-item nav-link">Contact</a>
-                <a href="login.php" class="nav-item nav-link"><i class="fa fa-user"></i></a>
+                <a href="login.php" class="nav-item nav-link active"><i class="fa fa-user"></i></a>
                 <a href="#" class="nav-item nav-link">
                     <div id="google_translate_element"></div>
                 </a>
@@ -84,11 +83,11 @@
             <div class="container py-5">
                 <div class="row justify-content-center">
                     <div class="col-lg-10 text-center">
-                        <h1 class="display-3 text-white animated slideInDown">Course Recommendation</h1>
+                        <h1 class="display-3 text-white animated slideInDown">Login</h1>
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb justify-content-center">
                                 <li class="breadcrumb-item"><a class="text-white" href="index.html">Home</a></li>
-                                <li class="breadcrumb-item text-white active" aria-current="page">Recommendation</li>
+                                <li class="breadcrumb-item text-white active" aria-current="page">Login</li>
                             </ol>
                         </nav>
                     </div>
@@ -97,40 +96,97 @@
         </div>
         <!-- Header End -->
     
+    <?php
 
+    include 'dbcon.php';
+
+    if(isset($_POST['submit'])){
+
+        $email = $_POST['email'];
+        $password = $_POST['password'];
+
+        $email_search = " select * from registration where email='$email' ";
+        $query = mysqli_query($con, $email_search);
+
+        $email_count = mysqli_num_rows($query);
+
+        if($email_count){
+            $email_pass = mysqli_fetch_assoc($query);
+            $db_pass = $email_pass['password'];
+            $pass_decode = password_verify($password, $db_pass);
+
+            if($pass_decode){
+                ?>
+                <script>
+                    location.replace("persdetail.html");
+                </script>
+                <?php
+            }
+            else{
+                ?>
+                    <script>
+                        alert("password incorrect");
+                    </script>
+                    <?php
+            }
+            
+        }else{
+            ?>
+                    <script>
+                        alert("invlaid email");
+                    </script>
+                    <?php
+        }
+    }
+
+    ?>
 
     <!-- Login Start -->
-    
-     <!-- Recommend Section Start -->
     <div class="container-xxl py-2 mt-4">
         <div class="container">
-            <div class="row g-4 wow fadeInUp" data-wow-delay="0.5s">
+          
+            <div class="row g-4 wow fadeInUp" data-wow-delay="0.5s ">
                 <center>
-                    <div class="shadow p-4" style="max-width: 1550px;">
+                    <form action="" method="POST" class="shadow p-4" style="max-width: 550px;">
                         <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
-                            <h1 class="mb-5 bg-white text-center px-3">Course Recommendation</h1>
+                            <h1 class="mb-5 bg-white text-center px-3">Login</h1>
+            
                         </div>
-                        <div class="col-12 mb-3">
-                            <div class="form-floating">
-                                <input type="hidden" class="form-control" id="message">
-                                
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <input name="email" type="email" class="form-control" id="email" placeholder="Email Address" required>
+                                    <label for="email">Email Address</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <input name="password" type="password" class="form-control" id="password" placeholder="Password" required>
+                                    <label for="password">Password</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <p><a href="#">Forgot password?</a></p>
+                            </div>
+                            
+                            <div class="col-12">
+                                <button name="submit" type="submit" class="btn text-light w-100 py-3" role="button">Login</button>
+                            </div>                            
+
+                            <div class="col-12 text-center">
+                                <p>Don't have an account? <a class="text-decoration-none" href="signup.php">Signup</a></p>
                             </div>
                         </div>
-                        <!-- Recommend Button -->
-                        <div class="col-12">
-                            <button id="recommend-btn" class="btn btn-primary text-light w-25 py-3" type="button">Recommend</button>
-                        </div>
+                    </form>
+                </center>     
+               
 
-                       
-
-                        <!-- Recommendation Output -->
-                        <div id="recommendation-output" class="mt-3 text-md-start"></div>
-                    </div>
-                </center>
             </div>
         </div>
     </div>
-    <!-- Recommend Section End -->
+    <!-- Login End -->
+
 
     <!-- Footer Start -->
     <div class="container-fluid bg-dark text-light footer pt-5 mt-5 wow fadeIn" data-wow-delay="0.1s">
@@ -200,28 +256,6 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
-
-    <script>
-        document.getElementById('recommend-btn').addEventListener('click', function() {
-            const message = document.getElementById('message').value;
-
-            fetch('http://localhost:5000/run_script', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: message }) // Send the message as JSON
-            })
-            .then(response => response.json()) // Parse JSON response
-            .then(data => {
-                // Display the output in the output div
-                document.getElementById('recommendation-output').innerText = data.message;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
-    </script>
 </body>
 
 </html>
