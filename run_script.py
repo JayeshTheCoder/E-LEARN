@@ -4,7 +4,7 @@ import difflib  # For fuzzy matching
 
 # Step 1: Authenticate and Access Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('C:\\xampp\\htdocs\\E-Learning-Website-HTML-CSS-main\\minor-project-439108-cc4a93fe43e4.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name("/Users/soumilsaha/Desktop/Minor Project/minor-project-439108-cc4a93fe43e4.json", scope)
 client = gspread.authorize(creds)
 
 # Step 2: Access Course Data and User Preferences Sheets

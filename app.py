@@ -1,21 +1,29 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request
+import subprocess
 from flask_cors import CORS
-import subprocess  # To run the external Python script
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
 
-@app.route("/run_script", methods=["POST"])
+# Enable CORS for all routes
+CORS(app)
+
+# Route to serve the test.html page
+@app.route('/')
+def index():
+    return render_template('test.html')
+
+# Route to run the Python script when the form is submitted
+@app.route('/run-script', methods=['POST'])
 def run_script():
-    # Run the external script and capture its output
-    result = subprocess.run(['python', 'run_script.py'], capture_output=True, text=True)
+    # This assumes 'python3' is the correct command to run your Python script
+    # If you need to use a different Python path, adjust accordingly.
+    result = subprocess.run(['python3', 'run_script.py'], capture_output=True, text=True)
+    
+    # Capture the output from the script
+    output = result.stdout
+    
+    # Return the output to the user (this can be adjusted as needed)
+    return f"<h1>Script Output:</h1><pre>{output}</pre>"
 
-    # Prepare the response data
-    response = {
-        "message": result.stdout.strip()  # Get the output from the script
-    }
-
-    return jsonify(response)  # Return a JSON response
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
