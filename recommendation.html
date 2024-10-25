@@ -102,7 +102,7 @@
     <!-- Login Start -->
     
      <!-- Recommend Section Start -->
-    <div class="container-xxl py-2 mt-4">
+     <div class="container-xxl py-2 mt-4">
         <div class="container">
             <div class="row g-4 wow fadeInUp" data-wow-delay="0.5s">
                 <center>
@@ -113,16 +113,14 @@
                         <div class="col-12 mb-3">
                             <div class="form-floating">
                                 <input type="hidden" class="form-control" id="message">
-                                
                             </div>
                         </div>
+    
                         <!-- Recommend Button -->
                         <div class="col-12">
                             <button id="recommend-btn" class="btn btn-primary text-light w-25 py-3" type="button">Recommend</button>
                         </div>
-
-                       
-
+    
                         <!-- Recommendation Output -->
                         <div id="recommendation-output" class="mt-3 text-md-start"></div>
                     </div>
@@ -130,6 +128,8 @@
             </div>
         </div>
     </div>
+    
+    
     <!-- Recommend Section End -->
 
     <!-- Footer Start -->
@@ -200,28 +200,47 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
-
+    
     <script>
         document.getElementById('recommend-btn').addEventListener('click', function() {
-            const message = document.getElementById('message').value;
-
+            const message = document.getElementById('message').value;  // Get the user message (if needed)
+    
+            // Fetch data from Flask route
             fetch('http://localhost:5000/run_script', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message: message }) // Send the message as JSON
+                body: JSON.stringify({ message: message })  // Send the message as JSON (if needed)
             })
-            .then(response => response.json()) // Parse JSON response
+            .then(response => response.json())  // Parse JSON response from Flask
             .then(data => {
-                // Display the output in the output div
-                document.getElementById('recommendation-output').innerText = data.message;
+                let outputDiv = document.getElementById('recommendation-output');  // Get output div
+                outputDiv.innerHTML = '';  // Clear previous content
+    
+                if (data.error) {
+                    // Display error message if no courses found
+                    outputDiv.innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    // Loop through the recommended courses and display them
+                    data.forEach(course => {
+                        const courseHTML = `
+                            <div class="col-12 d-flex align-items-center my-2">
+                                <span>${course['Course Name']} [Similarity: ${course['Similarity'].toFixed(2)}]</span>
+                                <button onclick="window.open('${course['Course Link']}', '_blank')" class="btn btn-primary text-light btn-sm mx-2">Go to Course</button>
+                            </div>
+                        `;
+                        outputDiv.innerHTML += courseHTML;  // Add the course recommendation to the output div
+                    });
+                }
             })
             .catch(error => {
-                console.error('Error:', error);
+                // Log any errors during the fetch request
+                console.error('Error fetching recommendations:', error);
             });
         });
     </script>
+
 </body>
 
 </html>

@@ -1,21 +1,23 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import difflib  
+import difflib
 from sklearn.neighbors import NearestNeighbors
 import pandas as pd
+import json  # Add JSON to structure the output
 
+# Google Sheets Setup
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name('C:\\xampp\\htdocs\\E-Learning-Website-HTML-CSS-main\\minor-project-439108-cc4a93fe43e4.json', scope)
 client = gspread.authorize(creds)
 
-course_sheet_id = "1HPsvg6oFH40R_7FY9MS8SYpqPPWNdItbqZFAOCbbNfY" 
+course_sheet_id = "1HPsvg6oFH40R_7FY9MS8SYpqPPWNdItbqZFAOCbbNfY"
 user_prefs_sheet_id = "1_T9r80LVnvwc5PKokC-GSen7GKITdB3JintqkAIKVvs"
 
-course_sheet = client.open_by_key(course_sheet_id).sheet1  
-user_prefs_sheet = client.open_by_key(user_prefs_sheet_id).sheet1  
+course_sheet = client.open_by_key(course_sheet_id).sheet1
+user_prefs_sheet = client.open_by_key(user_prefs_sheet_id).sheet1
 
-courses = course_sheet.get_all_records()  
-user_prefs = user_prefs_sheet.get_all_records()  
+courses = course_sheet.get_all_records()
+user_prefs = user_prefs_sheet.get_all_records()
 
 synonyms = {
     "ai": ["artificial intelligence", "ml", "machine learning"],
@@ -59,7 +61,6 @@ if user_prefs:
     ]
     
     df = pd.DataFrame(similarity_data)
-
     df = df[df['Similarity'] > 0.4]
 
     if not df.empty:
@@ -67,13 +68,15 @@ if user_prefs:
         knn = NearestNeighbors(n_neighbors=3, metric='euclidean')
         knn.fit(X)
 
-        _, indices = knn.kneighbors([[1]])  
+        _, indices = knn.kneighbors([[1]])
         recommended_courses = df.iloc[indices[0]]
 
-        print("Top 3 Recommended Courses Based on Your Preferences:")
-        for idx, recommended_course in recommended_courses.iterrows():
-            print(f"- {recommended_course['Course Name']} ({recommended_course['Course Link']}) [Similarity: {recommended_course['Similarity']:.2f}]")
+        # Prepare the structured JSON response
+        recommended_list = recommended_courses.to_dict(orient='records')
+        
+        # Output as JSON string
+        print(json.dumps(recommended_list))
     else:
-        print("No courses found matching the preferences.")
+        print(json.dumps({"error": "No courses found matching the preferences."}))
 else:
-    print("No user preferences found.")
+    print(json.dumps({"error": "No user preferences found."}))
