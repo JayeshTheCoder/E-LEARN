@@ -184,7 +184,106 @@
         </div>
     </div>
     <!-- Footer End -->
+<!-- Chat Bot -->
+<div class="chat-container">
+    <div class="chat-box" id="chatBox">
+        <div class="chat-header">
+            <h5>Course Assistant</h5>
+            <button class="close-btn" id="closeChat">×</button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask about courses...">
+            <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <button class="chat-toggle" id="chatToggle"><i class="fas fa-comments"></i></button>
+</div>
 
+<style>
+.chat-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.chat-box {
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    display: none;
+    flex-direction: column;
+}
+
+.chat-box.active {
+    display: flex;
+}
+
+.chat-header {
+    background: #fb873f;
+    color: white;
+    padding: 15px;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.chat-input {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid #ddd;
+}
+
+#userInput {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.chat-toggle {
+    background: #fb873f;
+    color: white;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    cursor: pointer;
+}
+
+.message {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 80%;
+}
+
+.user-message {
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-left: auto;
+}
+
+.bot-message {
+    background: #e3f2fd;
+    margin-right: auto;
+}
+</style>
 
     <!-- Back to Top -->
     <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
@@ -239,8 +338,87 @@
                 console.error('Error fetching recommendations:', error);
             });
         });
+        
     </script>
+<script>
+    // Chat Bot Functionality
+    const chatToggle = document.getElementById('chatToggle');
+    const chatBox = document.getElementById('chatBox');
+    const closeChat = document.getElementById('closeChat');
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    // Toggle chat visibility
+    chatToggle.addEventListener('click', () => {
+        chatBox.classList.add('active');
+        chatToggle.style.display = 'none';
+    });
+    
+    closeChat.addEventListener('click', () => {
+        chatBox.classList.remove('active');
+        chatToggle.style.display = 'block';
+    });
+    
+    // Handle user input
+    async function handleUserInput() {
+    const message = userInput.value.trim();
+    if (!message) return;
 
+    appendMessage(message, 'user');
+    userInput.value = '';
+
+    let loadingMsg;  // Declare loadingMsg outside the try block
+    try {
+        // Add loading state
+        loadingMsg = appendMessage('Typing...', 'bot');
+        
+        // Add a timeout for the fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);  // 10-second timeout
+
+        const response = await fetch('http://localhost:5501/chat', {  // Update the URL
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message }),
+    signal: controller.signal
+});
+
+        clearTimeout(timeoutId);  // Clear the timeout if the request succeeds
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        chatMessages.removeChild(loadingMsg);  // Remove loading message
+        appendMessage(data.reply, 'bot');
+    } catch (error) {
+        console.error('Chat error:', error);  // Log the error
+        if (loadingMsg) {
+            chatMessages.removeChild(loadingMsg);  // Ensure loadingMsg exists before removing
+        }
+        appendMessage('Sorry, there was an error processing your request. Please try again.', 'bot');
+    }
+}
+
+function appendMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    messageDiv.textContent = text;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return messageDiv;  // Return reference for loading message removal
+}
+    
+    // Event listeners
+    sendBtn.addEventListener('click', handleUserInput);
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleUserInput();
+    });
+    </script>
 </body>
 
 </html>
